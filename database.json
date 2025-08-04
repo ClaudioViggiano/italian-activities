@@ -1,24 +1,36 @@
 {
-  "lastUpdate": "2024-08-04T12:00:00.000Z",
-  "totalActivities": 2,
+  "lastUpdate": "2024-08-04T14:30:00.000Z",
+  "totalActivities": 3,
   "activities": [
     {
       "id": 1722777600000,
       "name": "Ristorante Da Mario",
       "city": "Roma",
       "type": "ristorazione",
+      "comment": "Ottimo ristorante tradizionale romano, pasta alla carbonara eccezionale. Atmosfera autentica e prezzi onesti.",
       "editor": "ale.vi",
       "date": "04/08/2024",
-      "timestamp": "2024-08-04T12:00:00.000Z"
+      "timestamp": "2024-08-04T14:30:00.000Z"
     },
     {
       "id": 1722777600001,
       "name": "Hotel Bella Vista",
       "city": "Milano",
       "type": "pernottamento",
+      "comment": "Hotel di lusso nel centro di Milano, vista panoramica sulla città. Colazione abbondante e servizio impeccabile.",
       "editor": "cla.vi",
       "date": "04/08/2024",
-      "timestamp": "2024-08-04T12:00:00.000Z"
+      "timestamp": "2024-08-04T14:30:00.000Z"
+    },
+    {
+      "id": 1722777600002,
+      "name": "Tour delle Cinque Terre",
+      "city": "La Spezia",
+      "type": "esperienziale",
+      "comment": "Esperienza unica per visitare i borghi colorati. Consiglio di fare il trekking da Monterosso a Vernazza, vista mozzafiato sul mare.",
+      "editor": "ale.vi",
+      "date": "04/08/2024",
+      "timestamp": "2024-08-04T14:30:00.000Z"
     }
   ]
 } 
