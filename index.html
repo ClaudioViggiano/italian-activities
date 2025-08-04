@@ -3,272 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attività Italiane - Database</title>
+    <title>Ale Consiglia - Attività Italiane</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <!-- Header Semplificato -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fas fa-flag"></i> Attività Italiane
+                <i class="fas fa-star"></i> Ale Consiglia
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#search">Ricerca</a>
-                    </li>
-                    <li class="nav-item editor-only" style="display: none;">
-                        <a class="nav-link" href="#add">Aggiungi Attività</a>
-                    </li>
-                </ul>
-                <div class="navbar-nav">
-                    <button class="btn btn-outline-light btn-sm" id="loginBtn">
-                        <i class="fas fa-sign-in-alt"></i> Login Editor
-                    </button>
-                </div>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-light" id="addBtn">
+                    <i class="fas fa-plus"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-
-
-    <!-- Main Content -->
-    <div class="container-fluid">
-        <!-- Search Section -->
-        <section id="search" class="section">
-            <div class="container">
-                <h2 class="text-center mb-4">
-                    <i class="fas fa-search"></i> Ricerca Attività
-                </h2>
-                
-                <!-- Filters -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <label class="form-label">Tipo Attività</label>
-                        <select class="form-select" id="typeFilter">
-                            <option value="">Tutti i tipi</option>
-                            <option value="ristorante">Ristorante</option>
-                            <option value="hotel">Hotel</option>
-                            <option value="bb">B&B</option>
-                            <option value="bar">Bar</option>
-                            <option value="pizzeria">Pizzeria</option>
-                            <option value="gelateria">Gelateria</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Città</label>
-                        <input type="text" class="form-control" id="cityFilter" placeholder="Filtra per città">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Provincia</label>
-                        <input type="text" class="form-control" id="provinceFilter" placeholder="Filtra per provincia">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Valutazione</label>
-                        <select class="form-select" id="ratingFilter">
-                            <option value="">Tutte le valutazioni</option>
-                            <option value="5">5 stelle</option>
-                            <option value="4">4+ stelle</option>
-                            <option value="3">3+ stelle</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Results Table -->
+    <!-- Contenuto Principale -->
+    <div class="container mt-5 pt-4">
+        <!-- Titolo -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4 text-primary">
+                    <i class="fas fa-star"></i> I consigli di Ale
+                </h1>
+            </div>
+        </div>
+        
+        <!-- Sezione Visualizzazione -->
+        <div class="row">
+            <div class="col-12">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="activitiesTable">
+                    <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
                                 <th>Nome</th>
-                                <th>Tipo</th>
                                 <th>Città</th>
-                                <th>Indirizzo</th>
-                                <th>Telefono</th>
-                                <th>Valutazione</th>
+                                <th>Tipo</th>
+                                <th>Commenti</th>
+                                <th>Editor</th>
+                                <th>Data</th>
                                 <th>Azioni</th>
                             </tr>
                         </thead>
                         <tbody id="activitiesTableBody">
-                            <!-- Activities will be loaded here -->
+                            <!-- Le attività verranno caricate qui -->
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Pagination -->
-                <nav aria-label="Paginazione">
-                    <ul class="pagination justify-content-center" id="pagination">
-                        <!-- Pagination will be generated here -->
-                    </ul>
-                </nav>
-            </div>
-        </section>
-
-        <!-- Add Activity Section (Editor Only) -->
-        <section id="add" class="section editor-only" style="display: none;">
-            <div class="container">
-                <h2 class="text-center mb-4">
-                    <i class="fas fa-plus"></i> Aggiungi Attività
-                </h2>
                 
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-body">
-                                <form id="addActivityForm">
-                                    <div class="mb-3">
-                                        <label class="form-label">Nome Attività *</label>
-                                        <input type="text" class="form-control" id="activityName" 
-                                               placeholder="Inserisci il nome dell'attività" required>
-                                        <div class="form-text">Inizia a digitare per cercare su Google Places</div>
-                                    </div>
-
-                                    <!-- Google Places Results -->
-                                    <div id="googleResults" class="mb-3" style="display: none;">
-                                        <label class="form-label">Risultati Google Places</label>
-                                        <div class="list-group" id="placesList">
-                                            <!-- Google Places results will appear here -->
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Tipo Attività *</label>
-                                                <select class="form-select" id="activityType" required>
-                                                    <option value="">Seleziona tipo</option>
-                                                    <option value="ristorante">Ristorante</option>
-                                                    <option value="hotel">Hotel</option>
-                                                    <option value="bb">B&B</option>
-                                                    <option value="bar">Bar</option>
-                                                    <option value="pizzeria">Pizzeria</option>
-                                                    <option value="gelateria">Gelateria</option>
-                                                    <option value="altro">Altro</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Città *</label>
-                                                <input type="text" class="form-control" id="activityCity" required>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Indirizzo</label>
-                                                <input type="text" class="form-control" id="activityAddress">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Telefono</label>
-                                                <input type="tel" class="form-control" id="activityPhone">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Sito Web</label>
-                                        <input type="url" class="form-control" id="activityWebsite" 
-                                               placeholder="https://...">
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Commenti Editor</label>
-                                        <textarea class="form-control" id="activityComments" rows="3" 
-                                                  placeholder="Inserisci commenti o note speciali"></textarea>
-                                    </div>
-
-                                    <div class="text-center">
-                                        <button type="submit" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-save"></i> Salva Attività
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- Login Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Login Editor Gmail</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-google fa-3x text-primary mb-3"></i>
-                        <h6>Accedi con il tuo account Gmail</h6>
-                        <p class="text-muted">Solo gli editori autorizzati possono accedere</p>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>Nota:</strong> Solo gli account Gmail autorizzati possono diventare editori.
-                    </div>
-                    
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label class="form-label">Email Gmail</label>
-                            <input type="email" class="form-control" id="loginEmail" 
-                                   placeholder="tuo.nome@gmail.com" required>
-                            <div class="form-text">Inserisci la tua email Gmail</div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                    <button type="button" class="btn btn-primary" id="loginSubmitBtn">
-                        <i class="fas fa-sign-in-alt"></i> Login con Gmail
+                <!-- Pulsanti sotto la tabella -->
+                <div class="text-end mt-3">
+                    <button class="btn btn-warning btn-sm me-2" id="reloadBtn" title="Ricarica database">
+                        <i class="fas fa-sync"></i> Ricarica
+                    </button>
+                    <button class="btn btn-danger btn-sm me-2" id="exportPdfBtn">
+                        <i class="fas fa-file-pdf"></i> Scarica PDF
+                    </button>
+                    <button class="btn btn-success btn-sm" id="sharePdfBtn">
+                        <i class="fas fa-share"></i> Condividi PDF
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Export Modal -->
-    <div class="modal fade" id="exportModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Modal Form -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Esporta Dati</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle"></i> Aggiungi Consiglio
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <button class="btn btn-success w-100 mb-3" id="exportExcelBtn">
-                                <i class="fas fa-file-excel"></i> Esporta Excel
+                    <form id="activityForm">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Nome Attività *</label>
+                                <input type="text" class="form-control" id="activityName" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Città *</label>
+                                <input type="text" class="form-control" id="activityCity" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo Attività *</label>
+                                <select class="form-select" id="activityType" required>
+                                    <option value="">Seleziona tipo</option>
+                                    <option value="ristorazione">Ristorazione</option>
+                                    <option value="esperienziale">Esperienziale</option>
+                                    <option value="pernottamento">Pernottamento</option>
+                                    <option value="pernotto+cibo">Pernotto + Cibo</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Commenti *</label>
+                            <textarea class="form-control" id="activityComment" rows="3" 
+                                      placeholder="Inserisci i tuoi commenti e consigli..." required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <a href="#" id="addAnotherLink" class="text-primary">
+                                <i class="fas fa-plus"></i> Aggiungi altro consiglio
+                            </a>
+                        </div>
+                        
+                        <div id="additionalActivities">
+                            <!-- Altri consigli verranno aggiunti qui -->
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nome Editor *</label>
+                            <input type="text" class="form-control" id="editorName" required>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Salva Consigli
                             </button>
                         </div>
-                        <div class="col-md-6">
-                            <button class="btn btn-danger w-100 mb-3" id="exportPdfBtn">
-                                <i class="fas fa-file-pdf"></i> Esporta PDF
-                            </button>
-                        </div>
-                    </div>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        L'esportazione includerà tutti i dati filtrati correntemente visualizzati.
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal Eliminazione -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle"></i> Conferma Eliminazione
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-trash fa-3x text-danger mb-3"></i>
+                        <h6 id="deleteActivityName">Elimina definitivamente</h6>
+                        <p class="text-muted">Questa azione non può essere annullata</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nome Editor *</label>
+                        <input type="text" class="form-control" id="deleteEditorName" 
+                               placeholder="Inserisci il nome dell'editor" required>
+                        <div class="form-text">Solo gli editor autorizzati possono eliminare consigli</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash"></i> Elimina Definitivamente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

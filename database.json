@@ -1,0 +1,24 @@
+{
+  "lastUpdate": "2024-08-04T12:00:00.000Z",
+  "totalActivities": 2,
+  "activities": [
+    {
+      "id": 1722777600000,
+      "name": "Ristorante Da Mario",
+      "city": "Roma",
+      "type": "ristorazione",
+      "editor": "ale.vi",
+      "date": "04/08/2024",
+      "timestamp": "2024-08-04T12:00:00.000Z"
+    },
+    {
+      "id": 1722777600001,
+      "name": "Hotel Bella Vista",
+      "city": "Milano",
+      "type": "pernottamento",
+      "editor": "cla.vi",
+      "date": "04/08/2024",
+      "timestamp": "2024-08-04T12:00:00.000Z"
+    }
+  ]
+} 

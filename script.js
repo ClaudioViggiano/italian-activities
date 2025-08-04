@@ -1,283 +1,325 @@
 // Global variables
 let activities = [];
-let filteredActivities = [];
-let currentPage = 1;
-let isEditor = false;
-let currentUser = null;
-let autocompleteTimeout = null;
+let tempActivities = []; // Per i consigli temporanei nel form
+let activityToDelete = null; // Per l'eliminazione
 
 // DOM elements
-const loginBtn = document.getElementById('loginBtn');
-const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-const loginSubmitBtn = document.getElementById('loginSubmitBtn');
-const exportBtn = document.getElementById('exportBtn');
-const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
-const exportExcelBtn = document.getElementById('exportExcelBtn');
+const addBtn = document.getElementById('addBtn');
+const addModal = new bootstrap.Modal(document.getElementById('addModal'));
+const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+const activityForm = document.getElementById('activityForm');
+const activitiesTableBody = document.getElementById('activitiesTableBody');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
+const sharePdfBtn = document.getElementById('sharePdfBtn');
+const reloadBtn = document.getElementById('reloadBtn');
+const addAnotherLink = document.getElementById('addAnotherLink');
+const additionalActivities = document.getElementById('additionalActivities');
+const deleteEditorName = document.getElementById('deleteEditorName');
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+const deleteActivityName = document.getElementById('deleteActivityName');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     loadActivities();
-    restoreSession();
 });
 
 // Initialize all event listeners
 function initializeEventListeners() {
-    // Navigation
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', handleNavigation);
-    });
-
-    // Login
-    loginBtn.addEventListener('click', () => loginModal.show());
-    loginSubmitBtn.addEventListener('click', handleLogin);
+    // Modal trigger
+    addBtn.addEventListener('click', () => addModal.show());
     
-    // Logout (click sul pulsante login quando già loggato)
-    loginBtn.addEventListener('click', handleLogout);
-
-    // Export
-    exportBtn.addEventListener('click', () => exportModal.show());
-    exportExcelBtn.addEventListener('click', exportToExcel);
+    // Form submission
+    activityForm.addEventListener('submit', handleAddActivity);
+    
+    // Add another activity link
+    addAnotherLink.addEventListener('click', addAnotherActivity);
+    
+    // Export buttons
     exportPdfBtn.addEventListener('click', exportToPDF);
-
-    // Filters
-    document.getElementById('typeFilter').addEventListener('change', applyFilters);
-    document.getElementById('cityFilter').addEventListener('input', applyFilters);
-    document.getElementById('provinceFilter').addEventListener('input', applyFilters);
-    document.getElementById('ratingFilter').addEventListener('change', applyFilters);
-
-    // Add activity form
-    const addActivityForm = document.getElementById('addActivityForm');
-    if (addActivityForm) {
-        addActivityForm.addEventListener('submit', handleAddActivity);
-    }
-
-    // Google Places autocomplete
-    const activityNameInput = document.getElementById('activityName');
-    if (activityNameInput) {
-        activityNameInput.addEventListener('input', handleActivityNameInput);
-    }
+    sharePdfBtn.addEventListener('click', sharePDF);
+    
+    // Reload button
+    reloadBtn.addEventListener('click', reloadDatabase);
+    
+    // Delete modal
+    confirmDeleteBtn.addEventListener('click', confirmDeleteActivity);
 }
 
-// Navigation handler
-function handleNavigation(e) {
+// Add another activity to the form
+function addAnotherActivity(e) {
     e.preventDefault();
-    const target = e.target.getAttribute('href');
     
-    // Update active nav link
-    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    e.target.classList.add('active');
-    
-    // Show/hide sections
-    document.querySelectorAll('.section').forEach(section => {
-        section.style.display = 'none';
-    });
-    
-    const targetSection = document.querySelector(target);
-    if (targetSection) {
-        targetSection.style.display = 'flex';
+    const currentActivity = getCurrentActivityFromForm();
+    if (currentActivity) {
+        tempActivities.push(currentActivity);
+        clearForm();
+        updateTempActivitiesDisplay();
     }
 }
 
-// Login handler per Gmail
-function handleLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
+// Get current activity from form
+function getCurrentActivityFromForm() {
+    const name = document.getElementById('activityName').value.trim();
+    const city = document.getElementById('activityCity').value.trim();
+    const type = document.getElementById('activityType').value;
+    const comment = document.getElementById('activityComment').value.trim();
     
-    // Verifica che sia un account Gmail
-    if (!isGmailAccount(email)) {
-        showAlert('Errore: Solo gli account Gmail sono supportati.', 'danger');
+    if (!name || !city || !type || !comment) {
+        showAlert('Compila tutti i campi obbligatori!', 'danger');
+        return null;
+    }
+    
+    return {
+        name: name,
+        city: city,
+        type: type,
+        comment: comment
+    };
+}
+
+// Clear form
+function clearForm() {
+    document.getElementById('activityName').value = '';
+    document.getElementById('activityCity').value = '';
+    document.getElementById('activityType').value = '';
+    document.getElementById('activityComment').value = '';
+}
+
+// Update temporary activities display
+function updateTempActivitiesDisplay() {
+    if (tempActivities.length === 0) {
+        additionalActivities.innerHTML = '';
         return;
     }
     
-    // Verifica che l'email sia autorizzata
-    if (isAuthorizedEditor(email)) {
-        isEditor = true;
-        currentUser = email;
-        loginModal.hide();
-        
-        // Update UI for editor
-        document.querySelectorAll('.editor-only').forEach(el => {
-            el.style.display = 'block';
-        });
-        
-        // Salva la sessione in localStorage
-        localStorage.setItem('italianActivitiesEditor', email);
-        
-        loginBtn.innerHTML = '<i class="fas fa-user"></i> ' + email.split('@')[0];
-        loginBtn.classList.remove('btn-outline-light');
-        loginBtn.classList.add('btn-light');
-        
-        showAlert('Login effettuato con successo! Ora puoi aggiungere attività.', 'success');
-    } else {
-        showAlert('Accesso negato. La tua email Gmail non è autorizzata come editor.', 'danger');
-    }
+    let html = '<div class="mb-3"><h6>Consigli temporanei:</h6>';
+    tempActivities.forEach((activity, index) => {
+        html += `
+            <div class="temp-activity p-2 mb-2 bg-light rounded">
+                <strong>${activity.name}</strong> - ${activity.city} (${activity.type})
+                <br><small class="text-muted">"${activity.comment}"</small>
+                <button type="button" class="btn btn-sm btn-outline-danger float-end" onclick="removeTempActivity(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    additionalActivities.innerHTML = html;
 }
 
-// Ripristina la sessione dal localStorage
-function restoreSession() {
-    const savedEditor = localStorage.getItem('italianActivitiesEditor');
-    if (savedEditor && isAuthorizedEditor(savedEditor)) {
-        isEditor = true;
-        currentUser = savedEditor;
-        
-        // Update UI for editor
-        document.querySelectorAll('.editor-only').forEach(el => {
-            el.style.display = 'block';
-        });
-        
-        loginBtn.innerHTML = '<i class="fas fa-user"></i> ' + savedEditor.split('@')[0];
-        loginBtn.classList.remove('btn-outline-light');
-        loginBtn.classList.add('btn-light');
-    }
+// Remove temporary activity
+function removeTempActivity(index) {
+    tempActivities.splice(index, 1);
+    updateTempActivitiesDisplay();
 }
 
-// Logout handler
-function handleLogout() {
-    if (isEditor) {
-        // Se già loggato, fai logout
-        isEditor = false;
-        currentUser = null;
-        
-        // Rimuovi dalla sessione
-        localStorage.removeItem('italianActivitiesEditor');
-        
-        // Update UI
-        document.querySelectorAll('.editor-only').forEach(el => {
-            el.style.display = 'none';
-        });
-        
-        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
-        loginBtn.classList.remove('btn-light');
-        loginBtn.classList.add('btn-outline-light');
-        
-        showAlert('Logout effettuato con successo.', 'info');
-        
-        // Torna alla sezione di ricerca
-        document.querySelectorAll('.section').forEach(section => {
-            section.style.display = 'none';
-        });
-        document.getElementById('search').style.display = 'flex';
-        
-        // Update active nav link
-        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-        document.querySelector('a[href="#search"]').classList.add('active');
-    } else {
-        // Se non loggato, mostra il modal di login
-        loginModal.show();
+// Handle add activity
+function handleAddActivity(e) {
+    e.preventDefault();
+    
+    const currentActivity = getCurrentActivityFromForm();
+    if (!currentActivity) return;
+    
+    const editorName = document.getElementById('editorName').value.trim();
+    if (!editorName) {
+        showAlert('Inserisci il nome dell\'editor!', 'danger');
+        return;
     }
+    
+    // Verifica che l'editor sia autorizzato
+    if (!isAuthorizedEditor(editorName)) {
+        showAlert('Editor non autorizzato!', 'danger');
+        return;
+    }
+    
+    // Combina attività corrente con quelle temporanee
+    const allActivities = [currentActivity, ...tempActivities];
+    
+            // Salva tutte le attività
+        allActivities.forEach(activity => {
+            const newActivity = {
+                id: Date.now() + Math.random(), // ID univoco
+                name: activity.name,
+                city: activity.city,
+                type: activity.type,
+                comment: activity.comment,
+                editor: editorName,
+                date: new Date().toLocaleDateString('it-IT'),
+                timestamp: new Date().toISOString()
+            };
+            
+            activities.unshift(newActivity); // Aggiungi all'inizio
+        });
+    
+    // Salva in localStorage
+    saveActivities();
+    
+
+    
+    // Aggiorna tabella
+    renderActivities();
+    
+    // Reset form e modal
+    activityForm.reset();
+    tempActivities = [];
+    updateTempActivitiesDisplay();
+    addModal.hide();
+    
+    // Mostra conferma
+    showAlert(`${allActivities.length} consiglio/i aggiunto/i con successo!`, 'success');
 }
 
-// Load activities from Google Sheets
+// Load activities from JSON file or localStorage
 async function loadActivities() {
     try {
-        // Simulate loading from Google Sheets
-        // In a real implementation, this would fetch from Google Sheets API
-        activities = [
-            {
-                id: 1,
-                name: 'Ristorante Da Mario',
-                type: 'ristorante',
-                city: 'Roma',
-                province: 'RM',
-                address: 'Via del Corso 123',
-                phone: '+39 06 1234567',
-                website: 'https://damario.it',
-                rating: 4.5,
-                comments: 'Ottimo ristorante tradizionale romano'
-            },
-            {
-                id: 2,
-                name: 'Hotel Bella Vista',
-                type: 'hotel',
-                city: 'Milano',
-                province: 'MI',
-                address: 'Via Montenapoleone 45',
-                phone: '+39 02 9876543',
-                website: 'https://bellavista.it',
-                rating: 4.8,
-                comments: 'Hotel di lusso nel centro di Milano'
-            },
-            {
-                id: 3,
-                name: 'B&B Casa Mia',
-                type: 'bb',
-                city: 'Firenze',
-                province: 'FI',
-                address: 'Via dei Calzaiuoli 67',
-                phone: '+39 055 4567890',
-                website: 'https://casamia.it',
-                rating: 4.2,
-                comments: 'Accogliente B&B nel centro storico'
+        // Prima prova a caricare da database.json
+        const response = await fetch('database.json');
+        if (response.ok) {
+            const data = await response.json();
+            activities = data.activities || [];
+            console.log('Caricato da database.json:', activities.length, 'attività');
+            
+            // Salva anche in localStorage come backup
+            localStorage.setItem('italianActivities', JSON.stringify(activities));
+        } else {
+            // Fallback: prova localStorage
+            const saved = localStorage.getItem('italianActivities');
+            if (saved) {
+                activities = JSON.parse(saved);
+                console.log('Caricato da localStorage:', activities.length, 'attività');
+            } else {
+                console.log('Nessun database trovato, iniziando con database vuoto');
+                activities = [];
             }
-        ];
-        
-        filteredActivities = [...activities];
+        }
         renderActivities();
         
+        // Mostra messaggio di stato
+        if (activities.length > 0) {
+            showAlert(`Database caricato: ${activities.length} consigli trovati.`, 'info');
+        }
     } catch (error) {
-        console.error('Errore nel caricamento delle attività:', error);
-        showAlert('Errore nel caricamento delle attività', 'danger');
+        console.error('Errore nel caricamento attività:', error);
+        // Fallback finale: localStorage
+        try {
+            const saved = localStorage.getItem('italianActivities');
+            if (saved) {
+                activities = JSON.parse(saved);
+                console.log('Caricato da localStorage (fallback):', activities.length, 'attività');
+                showAlert(`Database caricato da backup: ${activities.length} consigli trovati.`, 'warning');
+            } else {
+                activities = [];
+                showAlert('Nessun database trovato. Inizia ad aggiungere consigli!', 'info');
+            }
+        } catch (localError) {
+            console.error('Errore anche nel localStorage:', localError);
+            activities = [];
+            showAlert('Nessun database trovato. Inizia ad aggiungere consigli!', 'info');
+        }
+        renderActivities();
+    }
+}
+
+// Save activities to localStorage and create JSON file
+function saveActivities() {
+    try {
+        // Salva in localStorage
+        localStorage.setItem('italianActivities', JSON.stringify(activities));
+        
+        // Crea file JSON per download
+        const databaseData = {
+            lastUpdate: new Date().toISOString(),
+            totalActivities: activities.length,
+            activities: activities
+        };
+        
+        // Creiamo un blob con i dati JSON
+        const blob = new Blob([JSON.stringify(databaseData, null, 2)], {
+            type: 'application/json'
+        });
+        
+        // Creiamo un link per il download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'database.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('Database salvato in localStorage e JSON scaricato');
+        
+        // Mostra messaggio di successo
+        showAlert('Database aggiornato! File database.json scaricato.', 'success');
+    } catch (error) {
+        console.error('Errore nel salvataggio attività:', error);
+        showAlert('Errore nel salvataggio del database.', 'danger');
     }
 }
 
 // Render activities table
 function renderActivities() {
     const tbody = document.getElementById('activitiesTableBody');
-    const itemsPerPage = getAppSettings().ITEMS_PER_PAGE;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const pageActivities = filteredActivities.slice(startIndex, endIndex);
-    
     tbody.innerHTML = '';
     
-    pageActivities.forEach(activity => {
+    if (activities.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x mb-3"></i>
+                    <br>Nessun consiglio inserito
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    activities.forEach(activity => {
         const row = createActivityRow(activity);
         tbody.appendChild(row);
     });
-    
-    renderPagination();
 }
 
 // Create activity table row
 function createActivityRow(activity) {
     const row = document.createElement('tr');
-    row.className = 'fade-in';
+    row.className = 'activity-row fade-in';
     
-    const activityType = getActivityType(activity.type);
+    const typeLabels = {
+        'ristorazione': '🍽️ Ristorazione',
+        'esperienziale': '🎯 Esperienziale',
+        'pernottamento': '🛏️ Pernottamento',
+        'pernotto+cibo': '🏨 Pernotto + Cibo'
+    };
     
     row.innerHTML = `
         <td>
             <strong>${activity.name}</strong>
-            ${activity.website ? `<br><small><a href="${activity.website}" target="_blank">${activity.website}</a></small>` : ''}
+        </td>
+        <td>${activity.city}</td>
+        <td>
+            <span class="badge bg-primary">${typeLabels[activity.type] || activity.type}</span>
         </td>
         <td>
-            <span class="badge bg-${activityType.color} activity-type-badge">
-                <i class="${activityType.icon}"></i> ${activity.type}
-            </span>
+            <em>"${activity.comment || 'Nessun commento'}"</em>
         </td>
-        <td>${activity.city} (${activity.province})</td>
-        <td>${activity.address}</td>
-        <td>${activity.phone || '-'}</td>
         <td>
-            <div class="rating-stars">
-                ${'★'.repeat(Math.floor(activity.rating))}${'☆'.repeat(5 - Math.floor(activity.rating))}
-                <small>(${activity.rating})</small>
-            </div>
+            <span class="editor-badge">${activity.editor}</span>
+        </td>
+        <td>
+            <span class="date-badge">${activity.date}</span>
         </td>
         <td>
             <div class="action-buttons">
-                <button class="btn btn-sm btn-outline-primary" onclick="viewActivity(${activity.id})">
-                    <i class="fas fa-eye"></i>
+                <button class="btn btn-sm btn-outline-success" onclick="shareActivity(${activity.id})" title="Condividi">
+                    <i class="fas fa-share"></i>
                 </button>
-                ${isEditor ? `
-                    <button class="btn btn-sm btn-outline-warning" onclick="editActivity(${activity.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteActivity(${activity.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                ` : ''}
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteActivity(${activity.id})" title="Elimina">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </td>
     `;
@@ -285,337 +327,258 @@ function createActivityRow(activity) {
     return row;
 }
 
-// Render pagination
-function renderPagination() {
-    const pagination = document.getElementById('pagination');
-    const itemsPerPage = getAppSettings().ITEMS_PER_PAGE;
-    const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
-    
-    pagination.innerHTML = '';
-    
-    if (totalPages <= 1) return;
-    
-    // Previous button
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-    prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Precedente</a>`;
-    pagination.appendChild(prevLi);
-    
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-        const li = document.createElement('li');
-        li.className = `page-item ${currentPage === i ? 'active' : ''}`;
-        li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
-        pagination.appendChild(li);
-    }
-    
-    // Next button
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-    nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Successiva</a>`;
-    pagination.appendChild(nextLi);
-}
-
-// Change page
-function changePage(page) {
-    const itemsPerPage = getAppSettings().ITEMS_PER_PAGE;
-    const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
-    
-    if (page >= 1 && page <= totalPages) {
-        currentPage = page;
-        renderActivities();
+// Delete activity - opens modal
+function deleteActivity(id) {
+    const activity = activities.find(a => a.id === id);
+    if (activity) {
+        activityToDelete = activity;
+        deleteActivityName.textContent = `Elimina definitivamente "${activity.name}"`;
+        deleteEditorName.value = '';
+        deleteModal.show();
     }
 }
 
-// Apply filters
-function applyFilters() {
-    const typeFilter = document.getElementById('typeFilter').value;
-    const cityFilter = document.getElementById('cityFilter').value.toLowerCase();
-    const provinceFilter = document.getElementById('provinceFilter').value.toLowerCase();
-    const ratingFilter = document.getElementById('ratingFilter').value;
-    
-    filteredActivities = activities.filter(activity => {
-        const typeMatch = !typeFilter || activity.type === typeFilter;
-        const cityMatch = !cityFilter || activity.city.toLowerCase().includes(cityFilter);
-        const provinceMatch = !provinceFilter || activity.province.toLowerCase().includes(provinceFilter);
-        const ratingMatch = !ratingFilter || activity.rating >= parseInt(ratingFilter);
-        
-        return typeMatch && cityMatch && provinceMatch && ratingMatch;
-    });
-    
-    currentPage = 1;
-    renderActivities();
+// Share activity
+function shareActivity(id) {
+    const activity = activities.find(a => a.id === id);
+    if (activity) {
+        const text = `Consiglio di Ale: ${activity.name} - ${activity.city} (${activity.type})\nCommento: "${activity.comment}"`;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Consiglio di Ale',
+                text: text
+            });
+        } else {
+            // Fallback: copia negli appunti
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('Consiglio copiato negli appunti!', 'success');
+            });
+        }
+    }
 }
 
-
-
-// Google Places autocomplete
-function handleActivityNameInput(e) {
-    const query = e.target.value;
-    
-    if (autocompleteTimeout) {
-        clearTimeout(autocompleteTimeout);
-    }
-    
-    if (query.length < 3) {
-        hideGoogleResults();
-        return;
-    }
-    
-    autocompleteTimeout = setTimeout(() => {
-        searchGooglePlaces(query);
-    }, getAppSettings().AUTOCOMPLETE_DELAY);
-}
-
-// Search Google Places
-async function searchGooglePlaces(query) {
+// Create database JSON file
+function createDatabaseJSON() {
     try {
-        const config = getConfig();
-        const apiKey = config.GOOGLE_PLACES_API_KEY;
+        const databaseData = {
+            metadata: {
+                created: new Date().toISOString(),
+                totalActivities: activities.length,
+                lastUpdate: new Date().toISOString()
+            },
+            activities: activities
+        };
         
-        if (apiKey === 'YOUR_GOOGLE_PLACES_API_KEY') {
-            // Simulate Google Places results for demo
-            const mockResults = [
-                {
-                    name: `${query} - Ristorante`,
-                    address: 'Via Roma 123, Milano, Italia',
-                    place_id: 'mock_1'
-                },
-                {
-                    name: `${query} - Hotel`,
-                    address: 'Via Milano 456, Roma, Italia',
-                    place_id: 'mock_2'
-                },
-                {
-                    name: `${query} - B&B`,
-                    address: 'Via Firenze 789, Firenze, Italia',
-                    place_id: 'mock_3'
-                }
-            ];
-            
-            showGoogleResults(mockResults);
-            return;
-        }
+        // Crea blob del JSON
+        const jsonString = JSON.stringify(databaseData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
         
-        const response = await fetch(
-            `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query + ' Italia')}&key=${apiKey}&language=it`
-        );
+        // Crea link per download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ale-consiglia-database-${new Date().toISOString().split('T')[0]}.json`;
         
-        if (response.ok) {
-            const data = await response.json();
-            showGoogleResults(data.results);
-        }
+        // Trigger download
+        document.body.appendChild(a);
+        a.click();
         
+        // Cleanup
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('Database JSON creato con successo');
     } catch (error) {
-        console.error('Errore nella ricerca Google Places:', error);
-        hideGoogleResults();
+        console.error('Errore nella creazione del database JSON:', error);
     }
-}
-
-// Show Google Places results
-function showGoogleResults(results) {
-    const resultsDiv = document.getElementById('googleResults');
-    const placesList = document.getElementById('placesList');
-    
-    placesList.innerHTML = '';
-    
-    results.slice(0, getAppSettings().MAX_SEARCH_RESULTS).forEach(place => {
-        const item = document.createElement('div');
-        item.className = 'place-item p-3';
-        item.innerHTML = `
-            <div class="place-name">${place.name}</div>
-            <div class="place-address">${place.address}</div>
-        `;
-        
-        item.addEventListener('click', () => selectGooglePlace(place));
-        placesList.appendChild(item);
-    });
-    
-    resultsDiv.style.display = 'block';
-}
-
-// Hide Google Places results
-function hideGoogleResults() {
-    document.getElementById('googleResults').style.display = 'none';
-}
-
-// Select Google Place
-function selectGooglePlace(place) {
-    document.getElementById('activityName').value = place.name;
-    document.getElementById('activityAddress').value = place.address;
-    
-    // Extract city from address
-    const addressParts = place.address.split(', ');
-    if (addressParts.length >= 2) {
-        document.getElementById('activityCity').value = addressParts[addressParts.length - 2];
-    }
-    
-    hideGoogleResults();
-}
-
-// Handle add activity
-function handleAddActivity(e) {
-    e.preventDefault();
-    
-    if (!isEditor) {
-        showAlert('Devi essere loggato come editor per aggiungere attività', 'warning');
-        return;
-    }
-    
-    const formData = new FormData(e.target);
-    const activity = {
-        id: Date.now(),
-        name: formData.get('activityName') || document.getElementById('activityName').value,
-        type: document.getElementById('activityType').value,
-        city: document.getElementById('activityCity').value,
-        province: extractProvince(document.getElementById('activityCity').value),
-        address: document.getElementById('activityAddress').value,
-        phone: document.getElementById('activityPhone').value,
-        website: document.getElementById('activityWebsite').value,
-        rating: 0,
-        comments: document.getElementById('activityComments').value,
-        addedBy: currentUser,
-        addedDate: new Date().toISOString()
-    };
-    
-    // Add to activities array
-    activities.push(activity);
-    filteredActivities = [...activities];
-    
-    // Update UI
-    renderActivities();
-    updateStats();
-    
-    // Reset form
-    e.target.reset();
-    hideGoogleResults();
-    
-    showAlert('Attività aggiunta con successo!', 'success');
-}
-
-// Extract province from city
-function extractProvince(city) {
-    // Simple mapping - in a real app, you'd use a proper database
-    const cityProvinceMap = {
-        'Roma': 'RM',
-        'Milano': 'MI',
-        'Firenze': 'FI',
-        'Napoli': 'NA',
-        'Venezia': 'VE',
-        'Torino': 'TO',
-        'Bologna': 'BO',
-        'Genova': 'GE',
-        'Palermo': 'PA',
-        'Bari': 'BA'
-    };
-    
-    return cityProvinceMap[city] || 'XX';
-}
-
-// Export to Excel
-function exportToExcel() {
-    const worksheet = XLSX.utils.json_to_sheet(filteredActivities);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attività Italiane');
-    
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `attivita_italiane_${new Date().toISOString().split('T')[0]}.xlsx`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    exportModal.hide();
-    showAlert('File Excel esportato con successo!', 'success');
 }
 
 // Export to PDF
 function exportToPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    if (activities.length === 0) {
+        showAlert('Nessun consiglio da esportare!', 'warning');
+        return;
+    }
     
-    // Add title
-    doc.setFontSize(20);
-    doc.text('Attività Italiane', 20, 20);
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Titolo
+        doc.setFontSize(20);
+        doc.text('Consigli di Ale', 20, 20);
+        
+        // Data
+        doc.setFontSize(12);
+        doc.text(`Generato il: ${new Date().toLocaleDateString('it-IT')}`, 20, 30);
+        
+        // Tabella
+        const tableData = activities.map(activity => [
+            activity.name,
+            activity.city,
+            activity.type,
+            activity.comment || 'Nessun commento',
+            activity.editor,
+            activity.date
+        ]);
+        
+        doc.autoTable({
+            head: [['Nome', 'Città', 'Tipo', 'Commenti', 'Editor', 'Data']],
+            body: tableData,
+            startY: 40,
+            styles: {
+                fontSize: 8,
+                cellPadding: 2
+            },
+            headStyles: {
+                fillColor: [102, 126, 234]
+            }
+        });
+        
+        // Salva file
+        const fileName = `consigli-ale-${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        
+        showAlert('File PDF scaricato con successo!', 'success');
+    } catch (error) {
+        console.error('Errore nell\'esportazione PDF:', error);
+        showAlert('Errore nell\'esportazione del PDF!', 'danger');
+    }
+}
+
+// Share PDF
+function sharePDF() {
+    if (activities.length === 0) {
+        showAlert('Nessun consiglio da condividere!', 'warning');
+        return;
+    }
     
-    // Add table
-    const tableData = filteredActivities.map(activity => [
-        activity.name,
-        activity.type,
-        activity.city,
-        activity.address,
-        activity.phone || '-',
-        activity.rating.toString()
-    ]);
-    
-    doc.autoTable({
-        head: [['Nome', 'Tipo', 'Città', 'Indirizzo', 'Telefono', 'Valutazione']],
-        body: tableData,
-        startY: 30,
-        styles: {
-            fontSize: 8,
-            cellPadding: 2
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Titolo
+        doc.setFontSize(20);
+        doc.text('Consigli di Ale', 20, 20);
+        
+        // Data
+        doc.setFontSize(12);
+        doc.text(`Generato il: ${new Date().toLocaleDateString('it-IT')}`, 20, 30);
+        
+        // Tabella
+        const tableData = activities.map(activity => [
+            activity.name,
+            activity.city,
+            activity.type,
+            activity.comment || 'Nessun commento',
+            activity.editor,
+            activity.date
+        ]);
+        
+        doc.autoTable({
+            head: [['Nome', 'Città', 'Tipo', 'Commenti', 'Editor', 'Data']],
+            body: tableData,
+            startY: 40,
+            styles: {
+                fontSize: 8,
+                cellPadding: 2
+            },
+            headStyles: {
+                fillColor: [102, 126, 234]
+            }
+        });
+        
+        // Converti in blob per condivisione
+        const pdfBlob = doc.output('blob');
+        
+        if (navigator.share) {
+            const file = new File([pdfBlob], `consigli-ale-${new Date().toISOString().split('T')[0]}.pdf`, {
+                type: 'application/pdf'
+            });
+            
+            navigator.share({
+                title: 'Consigli di Ale',
+                text: 'Ecco i consigli di Ale in formato PDF',
+                files: [file]
+            }).then(() => {
+                showAlert('PDF condiviso con successo!', 'success');
+            }).catch((error) => {
+                console.error('Errore nella condivisione:', error);
+                showAlert('Errore nella condivisione del PDF', 'danger');
+            });
+        } else {
+            // Fallback: download
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `consigli-ale-${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showAlert('PDF scaricato (condivisione non supportata)', 'info');
         }
-    });
-    
-    doc.save(`attivita_italiane_${new Date().toISOString().split('T')[0]}.pdf`);
-    exportModal.hide();
-    showAlert('File PDF esportato con successo!', 'success');
-}
-
-// Activity actions
-function viewActivity(id) {
-    const activity = activities.find(a => a.id === id);
-    if (activity) {
-        showAlert(`Visualizzando: ${activity.name}`, 'info');
+    } catch (error) {
+        console.error('Errore nella condivisione PDF:', error);
+        showAlert('Errore nella condivisione del PDF!', 'danger');
     }
 }
 
-function editActivity(id) {
-    if (!isEditor) {
-        showAlert('Devi essere loggato come editor per modificare attività', 'warning');
+
+
+// Reload database from file
+async function reloadDatabase() {
+    showAlert('Ricaricamento database in corso...', 'info');
+    await loadActivities();
+}
+
+// Confirm delete activity
+function confirmDeleteActivity() {
+    const editorName = deleteEditorName.value.trim();
+    
+    if (!editorName) {
+        showAlert('Inserisci il nome dell\'editor!', 'danger');
         return;
     }
     
-    const activity = activities.find(a => a.id === id);
-    if (activity) {
-        showAlert(`Modificando: ${activity.name}`, 'info');
-    }
-}
-
-function deleteActivity(id) {
-    if (!isEditor) {
-        showAlert('Devi essere loggato come editor per eliminare attività', 'warning');
+    if (!isAuthorizedEditor(editorName)) {
+        showAlert('Editor non autorizzato!', 'danger');
         return;
     }
     
-    if (confirm('Sei sicuro di voler eliminare questa attività?')) {
-        activities = activities.filter(a => a.id !== id);
-        filteredActivities = [...activities];
+    if (activityToDelete) {
+        // Rimuovi l'attività
+        activities = activities.filter(activity => activity.id !== activityToDelete.id);
+        
+        // Salva e ricarica
+        saveActivities();
         renderActivities();
-        updateStats();
-        showAlert('Attività eliminata con successo!', 'success');
+        
+        // Chiudi modal
+        deleteModal.hide();
+        activityToDelete = null;
+        
+        showAlert(`Consiglio "${activityToDelete.name}" eliminato definitivamente!`, 'success');
     }
 }
 
-// Utility functions
+// Show alert
 function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
+    const alertContainer = document.getElementById('alertContainer');
+    
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
-    document.body.appendChild(alertDiv);
+    alertContainer.appendChild(alert);
     
+    // Auto-remove after 5 seconds
     setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
+        if (alert.parentNode) {
+            alert.remove();
         }
     }, 5000);
 }

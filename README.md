@@ -1,131 +1,128 @@
-# Italian Activities - Database Attività Italiane
+# Ale Consiglia - Sistema Consigli
 
-Un sito web gratuito basato sui prodotti Google per gestire attività italiane (ristoranti, B&B, etc.) con autenticazione Gmail e hosting su Google.
+Un sito web semplice per gestire e condividere consigli di attività italiane.
 
-## 🚀 Hosting su Google
+## 🚀 Funzionalità
 
-### Opzione 1: Google Sites (Raccomandato)
+### **📝 Inserimento Consigli**
+- **Modal form**: Clicca il pulsante "+" nell'header
+- **Campi obbligatori**: Nome attività, Città, Tipo attività
+- **Tipi disponibili**: Ristorazione, Esperienziale, Pernottamento, Pernotto + Cibo
+- **Consigli multipli**: Aggiungi più consigli in una volta
+- **Editor**: Inserisci nome editor (ale.vi o cla.vi)
 
-#### Passi per l'Hosting:
-1. **Vai su [Google Sites](https://sites.google.com)**
-2. **Crea un nuovo sito**
-3. **Carica i file HTML/CSS/JS**
-4. **Configura le autorizzazioni:**
-   - **Visibilità**: "Chiunque abbia il link può visualizzare"
-   - **Editori**: Solo utenti Gmail specifici
+### **📊 Visualizzazione**
+- **Tabella dinamica**: Tutti i consigli inseriti
+- **Colonne**: Nome, Città, Tipo, Editor, Data, Azioni
+- **Azioni**: Condividi singolo consiglio, Elimina
 
-#### Vantaggi:
-- ✅ Hosting gratuito
-- ✅ Integrazione nativa con Google
-- ✅ SSL automatico
-- ✅ Dominio personalizzato possibile
-- ✅ Backup automatico
+### **💾 Sistema Database**
+- **Salvataggio automatico**: In localStorage del browser
+- **Export JSON**: File database.json scaricato automaticamente
+- **Upload JSON**: Carica database esistente tramite pulsante "Carica JSON"
 
-### Opzione 2: Google Cloud Platform (Avanzato)
+### **📤 Export**
+- **PDF**: Scarica tutta la tabella in formato PDF
+- **Condivisione**: Condividi singoli consigli
 
-#### Passi:
-1. **Crea progetto su [Google Cloud Console](https://console.cloud.google.com)**
-2. **Abilita Google Sites API**
-3. **Deploy su Google App Engine**
-4. **Configura dominio personalizzato**
+## 🔧 Come Usare
 
-## 🔐 Autenticazione Gmail
+### **1. Inserimento Consigli**
+1. Clicca il pulsante "+" nell'header
+2. Compila i campi obbligatori
+3. (Opzionale) Clicca "Aggiungi altro consiglio" per inserirne più di uno
+4. Inserisci il nome editor (ale.vi o cla.vi)
+5. Clicca "Salva Consigli"
 
-### Configurazione Editori:
+### **2. Caricamento Database**
+1. Clicca "Carica JSON" nella tabella
+2. Seleziona il file database.json
+3. Il database verrà caricato automaticamente
 
-```javascript
-// In config.js - Sostituisci con le email Gmail degli editori
-AUTHORIZED_EDITORS: [
-    'tuo.nome@gmail.com',
-    'altro.editor@gmail.com',
-    'admin@gmail.com'
-]
+### **3. Export**
+- **PDF**: Clicca "PDF" per scaricare tutta la tabella
+- **Condivisione**: Clicca l'icona share per condividere un singolo consiglio
+
+## 📁 Struttura File
+
 ```
-
-### Funzionalità:
-- **Login**: Solo con account Gmail
-- **Autorizzazione**: Solo editori specificati
-- **Visibilità**: Pubblica (chiunque con il link)
-- **Sicurezza**: Gestita da Google
-
-## 📋 Setup Completo
-
-### 1. Preparazione File
-```bash
-# Struttura finale per Google Sites
 italian-activities/
-├── index.html
-├── styles.css
-├── script.js
-├── config.js
-└── README.md
+├── index.html          # Pagina principale
+├── styles.css          # Stili CSS
+├── script.js           # Logica JavaScript
+├── config.js           # Configurazione
+├── database.json       # Database di esempio
+└── README.md           # Questo file
 ```
 
-### 2. Configurazione Google APIs
-- **Google Places API**: Per autocompletamento
-- **Google Sheets API**: Per database
-- **Google Sites API**: Per hosting
+## 🌐 Hosting
 
-### 3. Deploy
-1. **Google Sites**: Carica tutti i file
-2. **Configura autorizzazioni**
-3. **Testa funzionalità**
-4. **Condividi link**
+### **Locale**
+```bash
+# Apri il file index.html nel browser
+open index.html
+```
 
-## 🔧 Configurazione Dettagliata
+### **GitHub Pages**
+1. Carica tutti i file su GitHub
+2. Abilita GitHub Pages nelle impostazioni
+3. Il sito sarà disponibile su `https://username.github.io/repository`
 
-### Google Sites Setup:
-1. **Accedi a [Google Sites](https://sites.google.com)**
-2. **Crea nuovo sito**
-3. **Vai su "Impostazioni" → "Autorizzazioni"**
-4. **Configura:**
-   - **Visualizzatori**: "Chiunque abbia il link"
-   - **Editori**: Solo email Gmail specifiche
-   - **Proprietari**: La tua email Gmail
+## 📊 Formato Database JSON
 
-### Google APIs Setup:
-1. **Google Cloud Console**
-2. **Crea progetto**
-3. **Abilita APIs:**
-   - Google Places API
-   - Google Sheets API
-4. **Genera chiavi API**
-5. **Configura in `config.js`**
+```json
+{
+  "lastUpdate": "2024-08-04T12:00:00.000Z",
+  "totalActivities": 2,
+  "activities": [
+    {
+      "id": 1722777600000,
+      "name": "Ristorante Da Mario",
+      "city": "Roma",
+      "type": "ristorazione",
+      "editor": "ale.vi",
+      "date": "04/08/2024",
+      "timestamp": "2024-08-04T12:00:00.000Z"
+    }
+  ]
+}
+```
 
-## 📱 Funzionalità Finali
+## 🛠️ Tecnologie
 
-### Per Editori (Gmail):
-- ✅ Login con account Gmail
-- ✅ Aggiunta attività con autocompletamento Google
-- ✅ Modifica/eliminazione attività
-- ✅ Gestione database
+- **HTML5**: Struttura semantica
+- **CSS3**: Stili moderni e responsive
+- **JavaScript ES6+**: Logica dell'applicazione
+- **Bootstrap 5**: Framework CSS
+- **Font Awesome**: Icone
+- **jsPDF**: Generazione PDF
+- **SheetJS**: (Rimosso) Non più utilizzato
 
-### Per Visitatori:
-- ✅ Visualizzazione attività
-- ✅ Filtri avanzati
-- ✅ Esportazione Excel/PDF
-- ✅ Ricerca per città/tipo
+## 🔐 Editor Autorizzati
 
-## 🛡️ Sicurezza
+- `ale.vi`
+- `cla.vi`
 
-### Autenticazione:
-- **Provider**: Google OAuth
-- **Utenti**: Solo Gmail autorizzati
-- **Sessione**: Gestita da Google
-- **Logout**: Automatico su Google
+## 📱 Responsive
 
-### Autorizzazioni:
-- **Editori**: Modifica completa
-- **Visitatori**: Solo lettura
-- **Admin**: Gestione editori
+Il sito è completamente responsive e funziona su:
+- Desktop
+- Tablet
+- Mobile
 
-## 📞 Supporto
+## 🚀 Deploy
 
-Per problemi con:
-- **Hosting**: Google Sites Help
-- **APIs**: Google Cloud Console
-- **Autenticazione**: Google OAuth Docs
+### **GitHub Pages (Raccomandato)**
+1. Crea repository su GitHub
+2. Carica tutti i file
+3. Abilita GitHub Pages in Settings → Pages
+4. Il sito sarà disponibile su `https://username.github.io/repository`
+
+### **Altri Hosting**
+- Netlify
+- Vercel
+- Qualsiasi hosting statico
 
 ---
 
-**Nota**: Questo setup garantisce massima sicurezza e integrazione con l'ecosistema Google, mantenendo la gratuità e la semplicità d'uso.
+**Sviluppato per gestire i consigli di Ale in modo semplice e efficace!** 🚀
