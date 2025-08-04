@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ale Consiglia - Attività Italiane</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Semplificato -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-star"></i> Ale Consiglia
+            </a>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-light" id="addBtn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenuto Principale -->
+    <div class="container mt-5 pt-4">
+        <!-- Titolo -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4 text-primary">
+                    <i class="fas fa-star"></i> I consigli di Ale
+                </h1>
+            </div>
+        </div>
+        
+        <!-- Sezione Visualizzazione -->
+        <div class="row">
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Città</th>
+                                <th>Tipo</th>
+                                <th>Commenti</th>
+                                <th>Editor</th>
+                                <th>Data</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activitiesTableBody">
+                            <!-- Le attività verranno caricate qui -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pulsanti sotto la tabella -->
+                <div class="text-end mt-3">
+                    <button class="btn btn-warning btn-sm me-2" id="reloadBtn" title="Ricarica database">
+                        <i class="fas fa-sync"></i> Ricarica
+                    </button>
+                    <button class="btn btn-danger btn-sm me-2" id="exportPdfBtn">
+                        <i class="fas fa-file-pdf"></i> Scarica PDF
+                    </button>
+                    <button class="btn btn-success btn-sm" id="sharePdfBtn">
+                        <i class="fas fa-share"></i> Condividi PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle"></i> Aggiungi Consiglio
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="activityForm">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Nome Attività *</label>
+                                <input type="text" class="form-control" id="activityName" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Città *</label>
+                                <input type="text" class="form-control" id="activityCity" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo Attività *</label>
+                                <select class="form-select" id="activityType" required>
+                                    <option value="">Seleziona tipo</option>
+                                    <option value="ristorazione">Ristorazione</option>
+                                    <option value="esperienziale">Esperienziale</option>
+                                    <option value="pernottamento">Pernottamento</option>
+                                    <option value="pernotto+cibo">Pernotto + Cibo</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Commenti *</label>
+                            <textarea class="form-control" id="activityComment" rows="3" 
+                                      placeholder="Inserisci i tuoi commenti e consigli..." required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <a href="#" id="addAnotherLink" class="text-primary">
+                                <i class="fas fa-plus"></i> Aggiungi altro consiglio
+                            </a>
+                        </div>
+                        
+                        <div id="additionalActivities">
+                            <!-- Altri consigli verranno aggiunti qui -->
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nome Editor *</label>
+                            <input type="text" class="form-control" id="editorName" required>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Salva Consigli
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Eliminazione -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle"></i> Conferma Eliminazione
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-trash fa-3x text-danger mb-3"></i>
+                        <h6 id="deleteActivityName">Elimina definitivamente</h6>
+                        <p class="text-muted">Questa azione non può essere annullata</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nome Editor *</label>
+                        <input type="text" class="form-control" id="deleteEditorName" 
+                               placeholder="Inserisci il nome dell'editor" required>
+                        <div class="form-text">Solo gli editor autorizzati possono eliminare consigli</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash"></i> Elimina Definitivamente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
